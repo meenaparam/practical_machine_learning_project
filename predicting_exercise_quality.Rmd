@@ -24,7 +24,7 @@ In this project, I used the `caret` package to implement machine learning algori
 
 First I load the training and testing datasets. The data for this project kindly comes from this source: http://groupware.les.inf.puc-rio.br/har. 
 
-```{r load data, tidy = T, cache = T}
+```{r load data, tidy = T, cached = T}
 # clear any objects from the working space
 rm(list = ls())
 
@@ -63,7 +63,7 @@ The variable I predict is called `classe` and has five categories: A, B, C, D, a
 
 I carried out some preprocessing of the data, including converting some factor variables back to integers and removing predictors with near zero variance.
 
-```{r preprocessing, tidy = T, cache = T}
+```{r preprocessing, tidy = T, cached = T}
 
 # read in the data
 training <- read.csv("pml-training.csv")
@@ -166,9 +166,9 @@ Because of a large number of missing data points, I used the `preProcess` functi
 
 There were a large number of potential predictors in the dataset, some of which contained quite a few NAs. The large number of variables made it difficult to carry out exploratory plots, so I pre-processed the data using **principal component analysis (PCA)** to reduce the number of dimensions and the amount of noise, whilst maximising the variance retained. I used the threshold variance default of 0.95.
 
-I carried out the PCA on the data whilst training my four models, using a 5-fold cross-validation each time. I chose this approach to reduce bias, although variance goes up with more folds. I used k-folds rather than bootstrapping to allow faster computation (using parallel processing) and followed methods for implementing parallel processing from the [DSS Community Site](https://github.com/lgreski/datasciencectacontent/blob/master/markdown/pml-randomForestPerformance.md)
+I carried out the PCA on the data whilst training my four models, using a 10-fold cross-validation each time. I chose this approach to reduce bias, although variance goes up with more folds. I used k-folds rather than bootstrapping to allow faster computation (using parallel processing) and followed methods for implementing parallel processing from the [DSS Community Site](https://github.com/lgreski/datasciencectacontent/blob/master/markdown/pml-randomForestPerformance.md)
 
-```{r fit models, tidy = T, cache = T}
+```{r fit models, tidy = T, cached = T}
 # set up parallel processing in caret - code taken from DSS Community site
 library(parallel)
 library(doParallel)
@@ -182,53 +182,35 @@ for(i in 1:25) seeds[[i]] <- sample.int(1000, 22)
 seeds[[26]] <- sample.int(1000, 1)
 
 # put the trainControl options into an object for ease - make sure allowParallel is set to true
-myctrl <- trainControl(method = "cv",
-                       number = 5,
+trctrl <- trainControl(method = "cv",
+                       number = 10,
                        seeds = seeds,
-                       allowParallel = TRUE,
-                       savePredictions="final",
-                       index=createResample(mytraining$classe, 25),
-                       classProbs=TRUE,
-                       preProcOptions = list(preProcess="pca")
-)
+                       allowParallel = TRUE)
 
-# use caretList to fit a series of models with the same trainControl options
-library(caretEnsemble)
+# fit the random forest model
+set.seed(1)
+modFitRf <- train(classe ~ ., data = mytraining, preProcess = "pca", method = "rf", prox = T, trControl = trctrl)
+modFitRf
 
-# take a sample of the data to speed up model fitting
-set.seed(100)
-mytraining_sample <- mytraining[sample(nrow(mytraining), 1000), ]
-    
-model_list <- caretList(
-  x = mytraining_sample[, -122],
-  y = mytraining_sample[, 122],
-  trControl = myctrl,
-  tuneList = list(
-    rf = caretModelSpec(method="rf", prox = T),
-    gbm = caretModelSpec(method="gbm", verbose = F),
-    nb = caretModelSpec(method = "nb"),
-    lda = caretModelSpec(method = "lda"))
-  )
+# fit the boosting model
+set.seed(1)
+modFitBoost <- train(classe ~ ., data = mytraining, preProcess = "pca", method = "gbm", verbose = F, trControl = trctrl)
+modFitBoost
 
-# create the stacked model
-glm_ensemble <- caretStack(
-  model_list,
-  method="glm",
-  metric="ROC",
-  trControl=trainControl(
-    method="boot",
-    number=10,
-    savePredictions="final",
-    classProbs=TRUE)
-)
+# fit the naive bayes model
+set.seed(1)
+modFitNb <- train(classe ~ ., data = mytraining, preProcess = "pca", method = "nb", trControl = trctrl)
+modFitNb
 
-# stop parallel processing
-stopCluster(cluster)
+# fit the linear discriminant analysis model
+set.seed(1)
+modFitLda<- train(classe ~ ., data = mytraining, preProcess = "pca", method = "lda", trControl = trctrl)
+modFitLda
 ```
 
 The accuracy of the four predictive models was as follows:
 
-```{r accuracy tables, results = "asis", eval = F, echo = F}
+```{r accuracy tables, results = "asis"}
 
 mymodels <- list(modFitRf,modFitBoost,modFitNb,modFitLda)
 mytable_labels <- list()
@@ -247,20 +229,23 @@ kable(mytable, digits = 3, type = "html", row.names = NA, col.names = c("Classif
 I compared the accuracy of the four models and decided to select the linear discriminant analysis modern as my final model choice. I think applied the prediction from the LDA model on `mytesting` dataset.
 
 
-```{r prediction mytesting, tidy = T, cache = T}
+```{r prediction mytesting, tidy = T}
+# get complete cases in the testing dataframe
+mytesting_complete <- subset(mytesting, complete.cases(mytesting))
 
-# predict using the ensemble on mytesting dataframe
+# predict using the LDA on the complete mytesting dataframe
 set.seed(1234)
-mytesting_preds <- predict(glm_ensemble, newdata=mytesting, type="raw")
-myconfusionmatrix <- confusionMatrix(mytesting_preds, mytesting_complete$classe)
+predLda <- predict(modFitLda, newdata = mytesting_complete)
+myconfusionmatrix <- confusionMatrix(predLda, mytesting_complete$classe)
 ```
 
+When I applied my prediction model to the `mytesting` dataset to see how well it predicted the 66 complete test cases, I achieved an accuracy (expected out of sample error) of `r scales::percent(round(myconfusionmatrix$overall[1], 3))`.
 
 ## Predicting on the testing dataset
 
 Finally I applied my combined prediction model to the provided real testing dataset. This gave the following results:
 
 ```{r final testing, tidy = T}
-predfinal <- predict(glm_ensemble, testing[,-122])
+predfinal <- predict.train(modFitLda, testing[,-122], na.action = na.exclude)
 extractPrediction(predfinal)
 ```
