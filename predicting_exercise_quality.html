@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title>Predicting how well people exercise</title>
+  <meta name="Author" content="Meenakshi Parameshwaran">
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="1348.17">
+  <style type="text/css">
+    p.p4 {margin: 0.0px 0.0px 10.0px 0.0px; line-height: 20.0px; font: 14.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333}
+    p.p5 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 18.0px; font: 13.0px Courier; color: #333333; -webkit-text-stroke: #333333; background-color: #f5f5f5}
+    p.p6 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 18.0px; font: 13.0px Courier; color: #333333; -webkit-text-stroke: #333333; background-color: #f5f5f5; min-height: 16.0px}
+    p.p7 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 18.0px; font: 13.0px Courier; color: #333333; -webkit-text-stroke: #333333; background-color: #ffffff}
+    p.p8 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 18.0px; font: 13.0px Courier; color: #333333; -webkit-text-stroke: #333333; background-color: #ffffff; min-height: 16.0px}
+    p.p9 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 20.0px; font: 14.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333}
+    p.p10 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 25.0px; font: 18.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333}
+    li.li9 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 20.0px; font: 14.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333}
+    span.s1 {font-kerning: none}
+    span.s2 {font: 14.0px 'Helvetica Neue'; font-kerning: none; color: #337ab7; -webkit-text-stroke: 0px #337ab7}
+    span.s3 {font: 13.0px Courier; font-kerning: none; background-color: rgba(0, 0, 0, 0.039)}
+    span.s4 {-webkit-text-stroke: 0px #000000}
+    table.t1 {border-collapse: collapse}
+    td.td1 {width: 185.0px}
+    td.td2 {width: 63.0px}
+    ul.ul1 {list-style-type: disc}
+  </style>
+</head>
+<body>
+<h1 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 39.0px; font: 36.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1">Predicting how well people exercise</span></h1>
+<h4 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 19.0px; font: 18.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1"><i>Meenakshi Parameshwaran</i></span></h4>
+<h4 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 19.0px; font: 18.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1"><i>22 February 2016</i></span></h4>
+<h2 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 33.0px; font: 30.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1">Executive Summary</span></h2>
+<p class="p4"><span class="s1">In this project I predicted the quality of 20 exercises carried out by 5 participants. I cleaned and pre-processed the training and testing datasets, including imputing missing values and reducing dimensions through principal component analysis. I fitted models on my training dataset using four different machine learning algorithms. After comparing accuracy statistics and confusion matrices, I decided to apply the linear discriminant analysis model to the testing dataset.</span></p>
+<h2 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 33.0px; font: 30.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1">Introduction</span></h2>
+<p class="p4"><span class="s1">Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify <i>how well they do it</i>.</span></p>
+<p class="p4"><span class="s1">The goal of my project is to predict exercise quality - specifically the manner in which 6 people carried out barbell lifts. I use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from their website <a href="http://groupware.les.inf.puc-rio.br/har"><span class="s2">here</span></a> (see the section on the Weight Lifting Exercise Dataset).</span></p>
+<h2 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 33.0px; font: 30.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1">Methods</span></h2>
+<p class="p4"><span class="s1">In this project, I used the </span><span class="s3">caret</span><span class="s1"> package to implement machine learning algorithms.</span></p>
+<p class="p4"><span class="s1">First I load the training and testing datasets. The data for this project kindly comes from this source: <a href="http://groupware.les.inf.puc-rio.br/har"><span class="s2">http://groupware.les.inf.puc-rio.br/har</span></a>.</span></p>
+<p class="p5"><span class="s1"># clear any objects from the working space</span></p>
+<p class="p5"><span class="s1">rm(list = ls())</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># set the working directory</span></p>
+<p class="p5"><span class="s1">setwd("~/GitHub/Practical_Machine_Learning_Project")</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># load required packages</span></p>
+<p class="p5"><span class="s1">library(caret)</span></p>
+<p class="p5"><span class="s1">library(knitr)</span></p>
+<p class="p5"><span class="s1">library(scales)</span></p>
+<p class="p5"><span class="s1">library(lattice)</span></p>
+<p class="p5"><span class="s1">library(ggplot2)</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># get the training data</span></p>
+<p class="p5"><span class="s1">if (!file.exists("pml-training.csv")) {</span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>download.file(url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",<span class="Apple-converted-space"> </span></span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span>destfile = "pml-training.csv", method = "curl")</span></p>
+<p class="p5"><span class="s1">}</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># get the test data</span></p>
+<p class="p5"><span class="s1">if (!file.exists("pml-testing.csv")) {</span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>download.file(url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",<span class="Apple-converted-space"> </span></span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span>destfile = "pml-testing.csv", method = "curl")</span></p>
+<p class="p5"><span class="s1">}</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># read in the datasets</span></p>
+<p class="p5"><span class="s1">training &lt;- read.csv("pml-training.csv")</span></p>
+<p class="p5"><span class="s1">testing &lt;- read.csv("pml-testing.csv")</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># look at the dimensions of the datasets</span></p>
+<p class="p5"><span class="s1">dim(training)</span></p>
+<p class="p7"><span class="s1">## [1] 19622 <span class="Apple-converted-space">  </span>160</span></p>
+<p class="p5"><span class="s1">dim(testing)</span></p>
+<p class="p7"><span class="s1">## [1]<span class="Apple-converted-space">  </span>20 160</span></p>
+<p class="p5"><span class="s1"># check data summary (output not shown summary(training)</span></p>
+<p class="p4"><span class="s1">The variable I predict is called </span><span class="s3">classe</span><span class="s1"> and has five categories: A, B, C, D, and E.</span></p>
+<p class="p5"><span class="s1"># look at the outcome variable</span></p>
+<p class="p5"><span class="s1">table(training$classe)</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space">    </span>A<span class="Apple-converted-space">    </span>B<span class="Apple-converted-space">    </span>C<span class="Apple-converted-space">    </span>D<span class="Apple-converted-space">    </span>E<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## 5580 3797 3422 3216 3607</span></p>
+<h4 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 19.0px; font: 18.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1">Pre-processing</span></h4>
+<p class="p4"><span class="s1">I carried out some preprocessing of the data, including converting some factor variables back to integers and removing predictors with near zero variance.</span></p>
+<p class="p5"><span class="s1"># read in the data</span></p>
+<p class="p5"><span class="s1">training &lt;- read.csv("pml-training.csv")</span></p>
+<p class="p5"><span class="s1">testing &lt;- read.csv("pml-testing.csv")</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># check structure of variables - output not shown str(training)</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># separate the outcome variable</span></p>
+<p class="p5"><span class="s1">classe &lt;- as.data.frame(training[, 160])</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># identify the variables I want to keep as factors</span></p>
+<p class="p5"><span class="s1">training_factors &lt;- training[, c(2, 5, 6)]</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># convert all variables to numeric except user_name, ctvd_timestamp,</span></p>
+<p class="p5"><span class="s1"># new_window and classe</span></p>
+<p class="p5"><span class="s1">training_conv &lt;- as.data.frame(lapply(training[, -c(2, 5, 6, 160)], function(x) {</span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>as.numeric(as.character(x))</span></p>
+<p class="p5"><span class="s1">}))</span></p>
+<p class="p8"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># remove numeric variables with near zero variance</span></p>
+<p class="p5"><span class="s1">training_nzv &lt;- nearZeroVar(training_conv, saveMetrics = T)</span></p>
+<p class="p5"><span class="s1">training_keepvars &lt;- subset(training_nzv, nzv == F)<span class="Apple-converted-space">  </span># 121 vars to keep</span></p>
+<p class="p5"><span class="s1">training_keepvars &lt;- row.names(training_keepvars)</span></p>
+<p class="p5"><span class="s1">training_conv_nzv &lt;- subset(training_conv, select = training_keepvars)</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># check for missing data - how many complete cases?</span></p>
+<p class="p5"><span class="s1">sum(complete.cases(training_conv_nzv))</span></p>
+<p class="p7"><span class="s1">## [1] 217</span></p>
+<p class="p5"><span class="s1"># impute missing data</span></p>
+<p class="p5"><span class="s1">imputeObj &lt;- preProcess(x = training_conv_nzv, method = "knnImpute")</span></p>
+<p class="p5"><span class="s1">training_imputed &lt;- predict(object = imputeObj, newdata = training_conv_nzv)</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># bring the dataset back together</span></p>
+<p class="p5"><span class="s1">training_processed &lt;- as.data.frame(cbind(training_imputed, classe))</span></p>
+<p class="p5"><span class="s1">names(training_processed)[122] &lt;- "classe"</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1">### repeat the processing for the testing dataset</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># separate the outcome variable</span></p>
+<p class="p5"><span class="s1">classe &lt;- testing[, 160]</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># identify the variables I want to keep as factors</span></p>
+<p class="p5"><span class="s1">testing_factors &lt;- testing[, c(2, 5, 6)]</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># convert all variables to numeric except user_name, ctvd_timestamp,</span></p>
+<p class="p5"><span class="s1"># new_window and classe</span></p>
+<p class="p5"><span class="s1">testing_conv &lt;- as.data.frame(lapply(testing[, -c(2, 5, 6, 160)], function(x) {</span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>as.numeric(as.character(x))</span></p>
+<p class="p5"><span class="s1">}))</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># remove the same variables because of near zero variance</span></p>
+<p class="p5"><span class="s1">testing_conv_nzv &lt;- subset(testing_conv, select = training_keepvars)</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># check for missing data - how many complete cases?</span></p>
+<p class="p5"><span class="s1">sum(complete.cases(testing_conv_nzv))</span></p>
+<p class="p7"><span class="s1">## [1] 0</span></p>
+<p class="p5"><span class="s1"># impute missing data</span></p>
+<p class="p5"><span class="s1">testing_imputed &lt;- predict(object = imputeObj, newdata = testing_conv_nzv)</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># bring the dataset back together</span></p>
+<p class="p5"><span class="s1">testing_processed &lt;- as.data.frame(cbind(testing_imputed, classe))</span></p>
+<p class="p5"><span class="s1">names(testing_processed)[122] &lt;- "problem_id"</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># remove all other objects except the processed datasets</span></p>
+<p class="p5"><span class="s1">rm(list = setdiff(ls(), c("training_processed", "testing_processed")))</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># check dimensions of processed datasets</span></p>
+<p class="p5"><span class="s1">dim(training_processed)</span></p>
+<p class="p7"><span class="s1">## [1] 19622 <span class="Apple-converted-space">  </span>122</span></p>
+<p class="p5"><span class="s1">dim(testing_processed)</span></p>
+<p class="p7"><span class="s1">## [1]<span class="Apple-converted-space">  </span>20 122</span></p>
+<p class="p5"><span class="s1"># rename the datasets</span></p>
+<p class="p5"><span class="s1">testing &lt;- testing_processed</span></p>
+<p class="p5"><span class="s1">training &lt;- training_processed</span></p>
+<p class="p5"><span class="s1">rm(testing_processed, training_processed)</span></p>
+<h4 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 19.0px; font: 18.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1">Splitting the training dataset</span></h4>
+<p class="p4"><span class="s1">Below I split the training dataset into a testing dataset to allow me to test my predictive model before applying it to the provided testing dataset. To avoid confusion, I call my own testing dataset </span><span class="s3">mytesting</span><span class="s1">.</span></p>
+<p class="p5"><span class="s1">set.seed(4568)</span></p>
+<p class="p5"><span class="s1">inTrain &lt;- createDataPartition(y = training$classe, p = 0.7, list = FALSE)</span></p>
+<p class="p5"><span class="s1">mytraining &lt;- training[inTrain, ]</span></p>
+<p class="p5"><span class="s1">mytesting &lt;- training[-inTrain, ]</span></p>
+<h4 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 19.0px; font: 18.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1">Modelling strategy and justification of choices</span></h4>
+<p class="p4"><span class="s1">I built my model with the aims of the “best” maching learning method (slide 8 from the “Relative importance of steps” lecture):</span></p>
+<ul class="ul1">
+  <li class="li9"><span class="s4"></span><span class="s1">interpretable</span></li>
+  <li class="li9"><span class="s4"></span><span class="s1">simple</span></li>
+  <li class="li9"><span class="s4"></span><span class="s1">accurate</span></li>
+  <li class="li9"><span class="s4"></span><span class="s1">fast (to train and to test)</span></li>
+  <li class="li9"><span class="s4"></span><span class="s1">scalable</span></li>
+</ul>
+<p class="p4"><span class="s1">The final slide of the “Random Forests” lecture noted that:</span></p>
+<p class="p10"><span class="s1">Random forests are usually one of the two top performing algorithms along with boosting in prediction contests.</span></p>
+<p class="p4"><span class="s1">Based on this, I decided to use <b>random forest</b> </span><span class="s3">(method = "rf")</span><span class="s1"> and <b>boosting</b> </span><span class="s3">(method = "gbm")</span><span class="s1"> algorithms in my prediction model. Additionally, I tested out <b>naive Bayes</b> and <b>linear discriminant analysis</b> classifiers.</span></p>
+<p class="p4"><span class="s1">Because of a large number of missing data points, I used the </span><span class="s3">preProcess</span><span class="s1"> function to impute the missing data. I used k-nearest neighbours with default settings (5 neighbours, mean column values) to impute the data.</span></p>
+<p class="p4"><span class="s1">There were a large number of potential predictors in the dataset, some of which contained quite a few NAs. The large number of variables made it difficult to carry out exploratory plots, so I pre-processed the data using <b>principal component analysis (PCA)</b> to reduce the number of dimensions and the amount of noise, whilst maximising the variance retained. I used the threshold variance default of 0.95.</span></p>
+<p class="p4"><span class="s1">I carried out the PCA on the data whilst training my four models, using a 5-fold cross-validation each time. I chose this approach to reduce bias, although variance goes up with more folds. I used k-folds rather than bootstrapping to allow faster computation (using parallel processing) and followed methods for implementing parallel processing from the <a href="https://github.com/lgreski/datasciencectacontent/blob/master/markdown/pml-randomForestPerformance.md"><span class="s2">DSS Community Site</span></a></span></p>
+<p class="p5"><span class="s1"># set up parallel processing in caret - code taken from DSS Community site</span></p>
+<p class="p5"><span class="s1">library(parallel)</span></p>
+<p class="p5"><span class="s1">library(doParallel)</span></p>
+<p class="p5"><span class="s1">cluster &lt;- makeCluster(detectCores() - 1)<span class="Apple-converted-space">  </span># convention to leave 1 core for OS</span></p>
+<p class="p5"><span class="s1">registerDoParallel(cluster)</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1">set.seed(13489)<span class="Apple-converted-space">  </span># set the seed at each interation, and keep them across model fits<span class="Apple-converted-space"> </span></span></p>
+<p class="p5"><span class="s1">seeds &lt;- vector(mode = "list", length = 26)</span></p>
+<p class="p5"><span class="s1">for (i in 1:25) seeds[[i]] &lt;- sample.int(1000, 22)</span></p>
+<p class="p5"><span class="s1"># for the last model:</span></p>
+<p class="p5"><span class="s1">seeds[[26]] &lt;- sample.int(1000, 1)</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># put the trainControl options into an object for ease - make sure</span></p>
+<p class="p5"><span class="s1"># allowParallel is set to true</span></p>
+<p class="p5"><span class="s1">trctrl &lt;- trainControl(method = "cv", number = 5, seeds = seeds, allowParallel = TRUE)</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1"># fit the random forest model</span></p>
+<p class="p5"><span class="s1">library(randomForest)</span></p>
+<p class="p5"><span class="s1">library(foreach)</span></p>
+<p class="p5"><span class="s1">library(iterators)</span></p>
+<p class="p5"><span class="s1">set.seed(1)</span></p>
+<p class="p5"><span class="s1">modFitRf &lt;- train(classe ~ ., data = mytraining, preProcess = "pca", method = "rf",<span class="Apple-converted-space"> </span></span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>prox = T, trControl = trctrl)</span></p>
+<p class="p5"><span class="s1">modFitRf</span></p>
+<p class="p7"><span class="s1">## Random Forest<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## 13737 samples</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>121 predictor</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">    </span>5 classes: 'A', 'B', 'C', 'D', 'E'<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Pre-processing: principal component signal extraction (121),</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space">  </span>centered (121), scaled (121)<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Resampling: Cross-Validated (5 fold)<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Summary of sample sizes: 10990, 10989, 10989, 10990, 10990<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Resampling results across tuning parameters:</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>mtry<span class="Apple-converted-space">  </span>Accuracy <span class="Apple-converted-space">  </span>Kappa<span class="Apple-converted-space">      </span>Accuracy SD<span class="Apple-converted-space">  </span>Kappa SD<span class="Apple-converted-space">   </span></span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">    </span>2 <span class="Apple-converted-space">  </span>0.9606901<span class="Apple-converted-space">  </span>0.9502572<span class="Apple-converted-space">  </span>0.005262967<span class="Apple-converted-space">  </span>0.006665046</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space">    </span>61 <span class="Apple-converted-space">  </span>0.9456941<span class="Apple-converted-space">  </span>0.9312894<span class="Apple-converted-space">  </span>0.002081318<span class="Apple-converted-space">  </span>0.002649155</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>121 <span class="Apple-converted-space">  </span>0.9441652<span class="Apple-converted-space">  </span>0.9293578<span class="Apple-converted-space">  </span>0.003344889<span class="Apple-converted-space">  </span>0.004250277</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Accuracy was used to select the optimal model using<span class="Apple-converted-space">  </span>the largest value.</span></p>
+<p class="p7"><span class="s1">## The final value used for the model was mtry = 2.</span></p>
+<p class="p5"><span class="s1"># fit the boosting model</span></p>
+<p class="p5"><span class="s1">library(gbm)</span></p>
+<p class="p5"><span class="s1">library(klaR)</span></p>
+<p class="p5"><span class="s1">library(splines)</span></p>
+<p class="p5"><span class="s1">library(survival)</span></p>
+<p class="p5"><span class="s1">set.seed(1)</span></p>
+<p class="p5"><span class="s1">modFitBoost &lt;- train(classe ~ ., data = mytraining, preProcess = "pca", method = "gbm",<span class="Apple-converted-space"> </span></span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>verbose = F, trControl = trctrl)</span></p>
+<p class="p5"><span class="s1">modFitBoost</span></p>
+<p class="p7"><span class="s1">## Stochastic Gradient Boosting<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## 13737 samples</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>121 predictor</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">    </span>5 classes: 'A', 'B', 'C', 'D', 'E'<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Pre-processing: principal component signal extraction (121),</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space">  </span>centered (121), scaled (121)<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Resampling: Cross-Validated (5 fold)<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Summary of sample sizes: 10990, 10989, 10989, 10990, 10990<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Resampling results across tuning parameters:</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>interaction.depth<span class="Apple-converted-space">  </span>n.trees<span class="Apple-converted-space">  </span>Accuracy <span class="Apple-converted-space">  </span>Kappa<span class="Apple-converted-space">      </span>Accuracy SD</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>1 <span class="Apple-converted-space">                  </span>50<span class="Apple-converted-space">      </span>0.6612801<span class="Apple-converted-space">  </span>0.5686124<span class="Apple-converted-space">  </span>0.012306185</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>1<span class="Apple-converted-space">                  </span>100<span class="Apple-converted-space">      </span>0.7257049<span class="Apple-converted-space">  </span>0.6516972<span class="Apple-converted-space">  </span>0.005681690</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>1<span class="Apple-converted-space">                  </span>150<span class="Apple-converted-space">      </span>0.7636314<span class="Apple-converted-space">  </span>0.7000462<span class="Apple-converted-space">  </span>0.005120421</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>2 <span class="Apple-converted-space">                  </span>50<span class="Apple-converted-space">      </span>0.7492900<span class="Apple-converted-space">  </span>0.6817878<span class="Apple-converted-space">  </span>0.005014442</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>2<span class="Apple-converted-space">                  </span>100<span class="Apple-converted-space">      </span>0.8116045<span class="Apple-converted-space">  </span>0.7612157<span class="Apple-converted-space">  </span>0.007314917</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>2<span class="Apple-converted-space">                  </span>150<span class="Apple-converted-space">      </span>0.8440705<span class="Apple-converted-space">  </span>0.8024881<span class="Apple-converted-space">  </span>0.007653148</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>3 <span class="Apple-converted-space">                  </span>50<span class="Apple-converted-space">      </span>0.7902021<span class="Apple-converted-space">  </span>0.7340147<span class="Apple-converted-space">  </span>0.014206142</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>3<span class="Apple-converted-space">                  </span>100<span class="Apple-converted-space">      </span>0.8465466<span class="Apple-converted-space">  </span>0.8056545<span class="Apple-converted-space">  </span>0.007490461</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>3<span class="Apple-converted-space">                  </span>150<span class="Apple-converted-space">      </span>0.8800331<span class="Apple-converted-space">  </span>0.8481113<span class="Apple-converted-space">  </span>0.008597882</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>Kappa SD<span class="Apple-converted-space">   </span></span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.015855395</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.007386528</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.006380910</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.006352531</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.009265686</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.009705646</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.018116443</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.009534167</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.010874122</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Tuning parameter 'shrinkage' was held constant at a value of 0.1</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Tuning parameter 'n.minobsinnode' was held constant at a value of 10</span></p>
+<p class="p7"><span class="s1">## Accuracy was used to select the optimal model using<span class="Apple-converted-space">  </span>the largest value.</span></p>
+<p class="p7"><span class="s1">## The final values used for the model were n.trees = 150,</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space">  </span>interaction.depth = 3, shrinkage = 0.1 and n.minobsinnode = 10.</span></p>
+<p class="p5"><span class="s1"># fit the naive bayes model</span></p>
+<p class="p5"><span class="s1">set.seed(1)</span></p>
+<p class="p5"><span class="s1">modFitNb &lt;- train(classe ~ ., data = mytraining, preProcess = "pca", method = "nb",<span class="Apple-converted-space"> </span></span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>trControl = trctrl)</span></p>
+<p class="p5"><span class="s1">modFitNb</span></p>
+<p class="p7"><span class="s1">## Naive Bayes<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## 13737 samples</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>121 predictor</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">    </span>5 classes: 'A', 'B', 'C', 'D', 'E'<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Pre-processing: principal component signal extraction (121),</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space">  </span>centered (121), scaled (121)<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Resampling: Cross-Validated (5 fold)<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Summary of sample sizes: 10990, 10989, 10989, 10990, 10990<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Resampling results across tuning parameters:</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>usekernel<span class="Apple-converted-space">  </span>Accuracy <span class="Apple-converted-space">  </span>Kappa<span class="Apple-converted-space">      </span>Accuracy SD<span class="Apple-converted-space">  </span>Kappa SD<span class="Apple-converted-space">   </span></span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>FALSE<span class="Apple-converted-space">      </span>0.6481022<span class="Apple-converted-space">  </span>0.5588132<span class="Apple-converted-space">  </span>0.017651607<span class="Apple-converted-space">  </span>0.021115451</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space">    </span>TRUE<span class="Apple-converted-space">      </span>0.7267236<span class="Apple-converted-space">  </span>0.6576199<span class="Apple-converted-space">  </span>0.001868151<span class="Apple-converted-space">  </span>0.002291283</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Tuning parameter 'fL' was held constant at a value of 0</span></p>
+<p class="p7"><span class="s1">## Accuracy was used to select the optimal model using<span class="Apple-converted-space">  </span>the largest value.</span></p>
+<p class="p7"><span class="s1">## The final values used for the model were fL = 0 and usekernel = TRUE.</span></p>
+<p class="p5"><span class="s1"># fit the linear discriminant analysis model</span></p>
+<p class="p5"><span class="s1">set.seed(1)</span></p>
+<p class="p5"><span class="s1">modFitLda &lt;- train(classe ~ ., data = mytraining, preProcess = "pca", method = "lda",<span class="Apple-converted-space"> </span></span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>trControl = trctrl)</span></p>
+<p class="p5"><span class="s1">modFitLda</span></p>
+<p class="p7"><span class="s1">## Linear Discriminant Analysis<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## 13737 samples</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>121 predictor</span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">    </span>5 classes: 'A', 'B', 'C', 'D', 'E'<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Pre-processing: principal component signal extraction (121),</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space">  </span>centered (121), scaled (121)<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Resampling: Cross-Validated (5 fold)<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Summary of sample sizes: 10990, 10989, 10989, 10990, 10990<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## Resampling results</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>Accuracy <span class="Apple-converted-space">  </span>Kappa<span class="Apple-converted-space">      </span>Accuracy SD<span class="Apple-converted-space">  </span>Kappa SD <span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">## <span class="Apple-converted-space">  </span>0.8973542<span class="Apple-converted-space">  </span>0.8703283<span class="Apple-converted-space">  </span>0.02823412 <span class="Apple-converted-space">  </span>0.03563013</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space"> </span></span></p>
+<p class="p5"><span class="s1"># stop the parallel processing</span></p>
+<p class="p5"><span class="s1">stopCluster(cluster)</span></p>
+<p class="p4"><span class="s1">The accuracy of the four predictive models was as follows:</span></p>
+<p class="p5"><span class="s1">mymodels &lt;- list(modFitRf, modFitBoost, modFitNb, modFitLda)</span></p>
+<p class="p5"><span class="s1">mytable_labels &lt;- list()</span></p>
+<p class="p5"><span class="s1">mytable_values &lt;- list()</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1">for (i in 1:length(mymodels)) {</span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>mytable_labels[i] &lt;- mymodels[[i]]$modelInfo$label</span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>mytable_values[i] &lt;- round(max(mymodels[[i]]$results$Accuracy), 3)</span></p>
+<p class="p5"><span class="s1">}</span></p>
+<p class="p6"><span class="s1"></span><br></p>
+<p class="p5"><span class="s1">mytable &lt;- cbind(mytable_labels, mytable_values)</span></p>
+<p class="p5"><span class="s1">library(knitr)</span></p>
+<p class="p5"><span class="s1">kable(mytable, digits = 3, type = "html", row.names = NA, col.names = c("Classifier",<span class="Apple-converted-space"> </span></span></p>
+<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span>"Accuracy"))</span></p>
+<table cellspacing="0" cellpadding="0" class="t1">
+  <tbody>
+    <tr>
+      <td valign="middle" class="td1">
+        <p class="p9"><span class="s1"><b>Classifier</b></span></p>
+      </td>
+      <td valign="middle" class="td2">
+        <p class="p9"><span class="s1"><b>Accuracy</b></span></p>
+      </td>
+    </tr>
+    <tr>
+      <td valign="middle" class="td1">
+        <p class="p9"><span class="s1">Random Forest</span></p>
+      </td>
+      <td valign="middle" class="td2">
+        <p class="p9"><span class="s1">0.961</span></p>
+      </td>
+    </tr>
+    <tr>
+      <td valign="middle" class="td1">
+        <p class="p9"><span class="s1">Stochastic Gradient Boosting</span></p>
+      </td>
+      <td valign="middle" class="td2">
+        <p class="p9"><span class="s1">0.88</span></p>
+      </td>
+    </tr>
+    <tr>
+      <td valign="middle" class="td1">
+        <p class="p9"><span class="s1">Naive Bayes</span></p>
+      </td>
+      <td valign="middle" class="td2">
+        <p class="p9"><span class="s1">0.727</span></p>
+      </td>
+    </tr>
+    <tr>
+      <td valign="middle" class="td1">
+        <p class="p9"><span class="s1">Linear Discriminant Analysis</span></p>
+      </td>
+      <td valign="middle" class="td2">
+        <p class="p9"><span class="s1">0.897</span></p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p class="p4"><span class="s1">I compared the accuracy of the four models and decided to select the random forest model. I think applied the prediction from the random forest model on </span><span class="s3">mytesting</span><span class="s1"> dataset.</span></p>
+<p class="p5"><span class="s1"># predict using RF on mytesting dataframe</span></p>
+<p class="p5"><span class="s1">set.seed(1234)</span></p>
+<p class="p5"><span class="s1">predRF &lt;- predict(modFitRf, newdata = mytesting)</span></p>
+<p class="p5"><span class="s1">myconfusionmatrix &lt;- confusionMatrix(predRF, mytesting$classe)</span></p>
+<p class="p4"><span class="s1">When I applied my prediction model to the </span><span class="s3">mytesting</span><span class="s1"> dataset, I achieved an accuracy (expected out of sample error) of 97.1%.</span></p>
+<h2 style="margin: 0.0px 0.0px 10.0px 0.0px; line-height: 33.0px; font: 30.0px 'Helvetica Neue'; color: #333333; -webkit-text-stroke: #333333"><span class="s1">Predicting on the testing dataset</span></h2>
+<p class="p4"><span class="s1">Finally I applied my combined prediction model to the provided real testing dataset. This gave the following results, which were submitted to the quiz.</span></p>
+<p class="p5"><span class="s1">predfinal_rf &lt;- predict(modFitRf, newdata = testing[, -122])</span></p>
+<p class="p5"><span class="s1">predfinal_rf</span></p>
+<p class="p7"><span class="s1">##<span class="Apple-converted-space">  </span>[1] B A B A A A A B A A A A B A B E A B B B</span></p>
+<p class="p7"><span class="s1">## Levels: A B C D E</span></p>
+</body>
+</html>
