@@ -1,16 +1,17 @@
 ---
 title: "Predicting how well people exercise"
 author: "Meenakshi Parameshwaran"
-date: "19 February 2016"
+date: "23 February 2016"
 output: html_document
 ---
 ```{r options, echo = F}
 library(knitr)
-opts_chunk$set(message = F, warnings = F, tidy = T)
+opts_chunk$set(message = F, warnings = F, tidy = T, cache = T)
 ```
 
 ## Executive Summary
 
+In this project I predicted the quality of 20 exercises carried out by 5 participants. I cleaned and pre-processed the training and testing datasets, including imputing missing values and reducing dimensions through principal component analysis. I fitted models on my training dataset using four different machine learning algorithms. After comparing accuracy statistics and confusion matrices, I decided to apply the linear discriminant analysis model to the testing dataset. 
 
 ## Introduction
 
@@ -24,7 +25,7 @@ In this project, I used the `caret` package to implement machine learning algori
 
 First I load the training and testing datasets. The data for this project kindly comes from this source: http://groupware.les.inf.puc-rio.br/har. 
 
-```{r load data, tidy = T, cached = T}
+```{r load data}
 # clear any objects from the working space
 rm(list = ls())
 
@@ -35,6 +36,8 @@ setwd("~/GitHub/Practical_Machine_Learning_Project")
 library(caret)
 library(knitr)
 library(scales)
+library(lattice)
+library(ggplot2)
 
 # get the training data
 if(!file.exists("pml-training.csv")){download.file(url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", destfile = "pml-training.csv", method = "curl")}
@@ -50,20 +53,22 @@ testing <- read.csv("pml-testing.csv")
 dim(training)
 dim(testing)
 
-# look at a summary of the training data to check for missing data (output not shown)
+# check data summary (output not shown
 # summary(training)
-
-# look at the outcome variable
-table(training$classe)
 ```
 
 The variable I predict is called `classe` and has five categories: A, B, C, D, and E.
+
+```{r classe distribution}
+# look at the outcome variable
+table(training$classe)
+```
 
 #### Pre-processing
 
 I carried out some preprocessing of the data, including converting some factor variables back to integers and removing predictors with near zero variance.
 
-```{r preprocessing, tidy = T, cached = T}
+```{r preprocessing}
 
 # read in the data
 training <- read.csv("pml-training.csv")
@@ -139,7 +144,7 @@ rm(testing_processed, training_processed)
 
 Below I split the training dataset into a testing dataset to allow me to test my predictive model before applying it to the provided testing dataset. To avoid confusion, I call my own testing dataset `mytesting`.
 
-```{r split the training dataset, tidy = T}
+```{r split the training dataset}
 set.seed(4568)
 inTrain <- createDataPartition(y = training$classe,
                               p=0.7, list=FALSE)
@@ -166,9 +171,9 @@ Because of a large number of missing data points, I used the `preProcess` functi
 
 There were a large number of potential predictors in the dataset, some of which contained quite a few NAs. The large number of variables made it difficult to carry out exploratory plots, so I pre-processed the data using **principal component analysis (PCA)** to reduce the number of dimensions and the amount of noise, whilst maximising the variance retained. I used the threshold variance default of 0.95.
 
-I carried out the PCA on the data whilst training my four models, using a 10-fold cross-validation each time. I chose this approach to reduce bias, although variance goes up with more folds. I used k-folds rather than bootstrapping to allow faster computation (using parallel processing) and followed methods for implementing parallel processing from the [DSS Community Site](https://github.com/lgreski/datasciencectacontent/blob/master/markdown/pml-randomForestPerformance.md)
+I carried out the PCA on the data whilst training my four models, using a 5-fold cross-validation each time. I chose this approach to reduce bias, although variance goes up with more folds. I used k-folds rather than bootstrapping to allow faster computation (using parallel processing) and followed methods for implementing parallel processing from the [DSS Community Site](https://github.com/lgreski/datasciencectacontent/blob/master/markdown/pml-randomForestPerformance.md)
 
-```{r fit models, tidy = T, cached = T}
+```{r fit models}
 # set up parallel processing in caret - code taken from DSS Community site
 library(parallel)
 library(doParallel)
@@ -183,16 +188,23 @@ seeds[[26]] <- sample.int(1000, 1)
 
 # put the trainControl options into an object for ease - make sure allowParallel is set to true
 trctrl <- trainControl(method = "cv",
-                       number = 10,
+                       number = 5,
                        seeds = seeds,
                        allowParallel = TRUE)
 
 # fit the random forest model
+library(randomForest)
+library(foreach)
+library(iterators)
 set.seed(1)
 modFitRf <- train(classe ~ ., data = mytraining, preProcess = "pca", method = "rf", prox = T, trControl = trctrl)
 modFitRf
 
 # fit the boosting model
+library(gbm)
+library(klaR)
+library(splines)
+library(survival)
 set.seed(1)
 modFitBoost <- train(classe ~ ., data = mytraining, preProcess = "pca", method = "gbm", verbose = F, trControl = trctrl)
 modFitBoost
@@ -206,6 +218,9 @@ modFitNb
 set.seed(1)
 modFitLda<- train(classe ~ ., data = mytraining, preProcess = "pca", method = "lda", trControl = trctrl)
 modFitLda
+
+# stop the parallel processing
+stopCluster(cluster)
 ```
 
 The accuracy of the four predictive models was as follows:
@@ -226,26 +241,22 @@ library(knitr)
 kable(mytable, digits = 3, type = "html", row.names = NA, col.names = c("Classifier", "Accuracy") )
 ```
 
-I compared the accuracy of the four models and decided to select the linear discriminant analysis modern as my final model choice. I think applied the prediction from the LDA model on `mytesting` dataset.
+I compared the accuracy of the four models and decided to select the random forest model. I think applied the prediction from the random forest model on `mytesting` dataset.
 
-
-```{r prediction mytesting, tidy = T}
-# get complete cases in the testing dataframe
-mytesting_complete <- subset(mytesting, complete.cases(mytesting))
-
-# predict using the LDA on the complete mytesting dataframe
+```{r prediction mytesting}
+# predict using RF on mytesting dataframe
 set.seed(1234)
-predLda <- predict(modFitLda, newdata = mytesting_complete)
-myconfusionmatrix <- confusionMatrix(predLda, mytesting_complete$classe)
+predRF <- predict(modFitRf, newdata = mytesting)
+myconfusionmatrix <- confusionMatrix(predRF, mytesting$classe)
 ```
 
-When I applied my prediction model to the `mytesting` dataset to see how well it predicted the 66 complete test cases, I achieved an accuracy (expected out of sample error) of `r scales::percent(round(myconfusionmatrix$overall[1], 3))`.
+When I applied my prediction model to the `mytesting` dataset, I achieved an accuracy (expected out of sample error) of `r scales::percent(round(myconfusionmatrix$overall[1], 3))`.
 
 ## Predicting on the testing dataset
 
-Finally I applied my combined prediction model to the provided real testing dataset. This gave the following results:
+Finally I applied my combined prediction model to the provided real testing dataset. This gave the following results, which were submitted to the quiz.
 
-```{r final testing, tidy = T}
-predfinal <- predict.train(modFitLda, testing[,-122], na.action = na.exclude)
-extractPrediction(predfinal)
+```{r final testing}
+predfinal_rf <- predict(modFitRf, newdata = testing[,-122])
+predfinal_rf
 ```
